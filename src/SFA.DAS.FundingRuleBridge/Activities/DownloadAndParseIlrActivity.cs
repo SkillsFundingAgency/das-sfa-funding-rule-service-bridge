@@ -15,11 +15,11 @@ public partial class DownloadAndParseIlrActivity(IIlrBlobStorageClient blobServi
     [Function(nameof(DownloadAndParseIlrActivity))]
     public async Task<List<LearnerSummary>> Run([ActivityTrigger] JobInfo jobInfo, FunctionContext context)
     {
-        var parameters = new Dictionary<string, object>
+        var parameters = new List<KeyValuePair<string, object?>>
         {
-            { "JobId", jobInfo.JobId },
-            { "Container", jobInfo.Container },
-            { "ValidIlrXmlFilename", jobInfo.ValidIlrXmlFilename }
+            new ("JobId", jobInfo.JobId),
+            new ("Container", jobInfo.Container),
+            new ("ValidIlrXmlFilename", jobInfo.ValidIlrXmlFilename)
         };
         
         using (logger.BeginScope(parameters))

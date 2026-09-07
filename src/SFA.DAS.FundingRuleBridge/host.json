@@ -14,12 +14,7 @@
             "Host": "Information",
             "Function": "Information"
         },
-        "openTelemetry": {
-            "includeScopes": true
-        },
-        "console": {
-            "includeScopes": true
-        }
+        "includeScopes": true
     },
     "extensions": {
         "serviceBus": {

@@ -43,6 +43,11 @@ public class WhenRunningProcessJobOrchestrator
 
         // assert
         result.Should().BeFalse();
+        
+        _fakeLogger.LatestRecord.Message.Should().Be("ProcessJobOrchestrator failed");
+        var scope = _fakeLogger.LatestRecord.Scopes[1] as List<KeyValuePair<string, object?>>;
+        scope.Should().NotBeNull();
+        scope.Should().ContainEquivalentOf(new KeyValuePair<string, object?>("Reason", "An exception occurred"));
     }
     
     [Test, MoqAutoData]
@@ -79,20 +84,40 @@ public class WhenRunningProcessJobOrchestrator
         _context
             .Setup(x => x.GetInput<JobInfo>())
             .Returns(jobInfo);
-        
+
         _context
             .Setup(x => x.CallActivityAsync<List<LearnerSummary>>(nameof(DownloadAndParseIlrActivity), It.IsAny<JobInfo>(), It.IsAny<TaskOptions?>()))
             .ReturnsAsync([learnerSummary]);
-        
+
         _context
             .Setup(x => x.CallSubOrchestratorAsync<ValidationSummary>(nameof(ValidateLearnerOrchestrator), It.IsAny<ValidateLearnerMessage>(), It.IsAny<TaskOptions?>()))
-            .ReturnsAsync(validationSummary);
-        
+            .ReturnsAsync(value:validationSummary, delay: TimeSpan.FromMilliseconds(200));
+
+        _context
+            .Setup(x => x.CurrentUtcDateTime)
+            .Returns(() => DateTime.UtcNow);
+
         // act
         var result = await ProcessJobOrchestrator.RunOrchestrator(_context.Object);
 
         // assert
         result.Should().BeTrue();
         _context.Verify(x => x.CallActivityAsync(nameof(WriteJobsResultsActivity), It.IsAny<WriteJobResultsRequest>(), It.IsAny<TaskOptions?>()), Times.Never());
+        
+        _fakeLogger.LatestRecord.Message.Should().Be("ProcessJobOrchestrator completed successfully");
+        
+        // first scope
+        var scope = _fakeLogger.LatestRecord.Scopes[0] as List<KeyValuePair<string, object?>>;
+        scope.Should().ContainEquivalentOf(new KeyValuePair<string, object?>("JobId", jobInfo.JobId));
+        scope.Should().ContainEquivalentOf(new KeyValuePair<string, object?>("CorrelationId", _context.Object.InstanceId));
+        
+        // second scope
+        scope = _fakeLogger.LatestRecord.Scopes[1] as List<KeyValuePair<string, object?>>;
+        scope.Should().ContainEquivalentOf(new KeyValuePair<string, object?>("ValidLearnerCount", 1));
+        scope.Should().ContainEquivalentOf(new KeyValuePair<string, object?>("InvalidLearnerCount", 0));
+        
+        var durationPair = scope.Find(x => x.Key == "Duration");
+        var duration = TimeSpan.Parse(durationPair.Value as string);
+        duration.Should().BeCloseTo(TimeSpan.FromMilliseconds(200), TimeSpan.FromMilliseconds(100));
     }
 }

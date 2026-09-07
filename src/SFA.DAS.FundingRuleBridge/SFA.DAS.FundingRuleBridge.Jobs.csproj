@@ -17,7 +17,6 @@
         <PackageReference Include="ESFA.DC.Queueing" Version="0.2.0-beta0001" />
         <PackageReference Include="ESFA.DC.Serialization.Json" Version="0.2.0" />
         <PackageReference Include="ESFA.DC.Serialization.Xml" Version="0.2.0" />
-        <PackageReference Include="Microsoft.ApplicationInsights.WorkerService" Version="3.1.2" />
         <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="2.52.0"/>
         <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.DurableTask" Version="1.18.0" />
         <PackageReference Include="Microsoft.Azure.Functions.Worker.OpenTelemetry" Version="1.2.0"/>
@@ -25,7 +24,6 @@
         <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Timer" Version="4.3.1" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.10" />
-        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.17.0" />
         <PackageReference Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.8.3" />
         <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.ServiceBus" Version="5.24.0" />
         <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Storage.Blobs" Version="6.8.1" />

@@ -23,10 +23,10 @@ public partial class ValidateLearnerOrchestrator
             input.CorrelationId,
             context.InstanceId
         );
-        var parameters = new Dictionary<string, object>
+        var parameters = new List<KeyValuePair<string, object?>>
         {
-            { "CorrelationId", input.CorrelationId },
-            { "WaitingInstanceId", context.InstanceId }
+            new ("CorrelationId", input.CorrelationId),
+            new ("WaitingInstanceId", context.InstanceId),
         };
         using var scope = logger.BeginScope(parameters);
 

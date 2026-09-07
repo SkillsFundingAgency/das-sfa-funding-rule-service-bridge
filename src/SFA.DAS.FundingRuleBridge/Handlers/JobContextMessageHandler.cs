@@ -17,7 +17,7 @@ public class JobContextMessageHandler(ILogger<JobContextMessageHandler> logger):
     
     public async Task<bool> HandleAsync(JobContextMessage message, CancellationToken cancellationToken)
     {
-        using var _ = logger.BeginScope(new Dictionary<string, object> { { "JobId", message.JobId } });
+        using var handlerScope = logger.BeginScope(new List<KeyValuePair<string, object?>> { new ("JobId", message.JobId) });
         logger.LogInformation("Received JobContextMessage");
 
         var count = 1;
@@ -30,15 +30,17 @@ public class JobContextMessageHandler(ILogger<JobContextMessageHandler> logger):
             instanceId = $"as-val-{message.JobId}-{++count}";
             existingInstance = await DurableClient.GetInstanceAsync(instanceId, cancellationToken);
         }
+        
+        using var instanceScope = logger.BeginScope(new List<KeyValuePair<string, object?>> { new("InstanceId", instanceId) });
 
         if (!TryGetJobInfo(message, logger, out var jobInfo))
         {
-            logger.LogError("{InstanceId}: Failed to get job info from message", instanceId);
+            logger.LogError("Failed to get job info from message");
             return false;
         }
             
         await DurableClient.ScheduleNewOrchestrationInstanceAsync(nameof(ProcessJobOrchestrator), jobInfo, new StartOrchestrationOptions(instanceId), cancellationToken);
-        logger.LogInformation("{InstanceId}: Started AS validation orchestration", instanceId);
+        logger.LogInformation("Started AS validation orchestration");
 
         try
         {
@@ -49,23 +51,23 @@ public class JobContextMessageHandler(ILogger<JobContextMessageHandler> logger):
         }
         catch (Exception e)
         {
-            logger.LogError(e, "{InstanceId}: Unhandled exception whilst waiting for job to complete", instanceId);
+            logger.LogError(e, "Unhandled exception whilst waiting for job to complete");
             return false;
         }
 
         if (existingInstance.RuntimeStatus != OrchestrationRuntimeStatus.Completed)
         {
-            logger.LogError("{InstanceId}: Job did not complete successfully, status: {FinalStatus}", instanceId, existingInstance.RuntimeStatus);
+            logger.LogError("Job did not complete successfully, status: {FinalStatus}", existingInstance.RuntimeStatus);
             return false;
         }
 
         if (TryGetJobResult(existingInstance, out var jobResult))
         {
-            logger.LogInformation("{InstanceId}: Job completed with result: {JobResult}", instanceId, jobResult.Value ? "Success" : "Failure");
+            logger.LogInformation("Job completed with result: {JobResult}", jobResult.Value ? "Success" : "Failure");
             return jobResult.Value;
         }
 
-        logger.LogError("{InstanceId}: Job completed successfully but did not contain a JobResult", instanceId);
+        logger.LogError("Job completed successfully but did not contain a JobResult");
         return false;
     }
 
@@ -107,19 +109,19 @@ public class JobContextMessageHandler(ILogger<JobContextMessageHandler> logger):
 
         if (!jobContextMessage.KeyValuePairs.TryGetValue(JobContextMessageKey.Container, out var container))
         {
-            logger.LogCritical("JobContextMessage does not contain the Container value");
+            logger.LogError("JobContextMessage does not contain the Container value");
             return false;
         }
         
         if (!jobContextMessage.KeyValuePairs.TryGetValue(JobContextMessageKey.UkPrn, out var ukprn))
         {
-            logger.LogCritical("JobContextMessage does not contain the Ukprn value");
+            logger.LogError("JobContextMessage does not contain the Ukprn value");
             return false;
         }
         
         if (!jobContextMessage.KeyValuePairs.TryGetValue(JobContextMessageKey.Filename, out var filename))
         {
-            logger.LogCritical("JobContextMessage does not contain the Filename value");
+            logger.LogError("JobContextMessage does not contain the Filename value");
             return false;
         }
         
